@@ -4,6 +4,8 @@ const _ = require('lodash');
 const express = require('express');
 const parser = require('body-parser');
 const {ObjectID} = require('mongodb');
+const cors = require('cors');
+
 
 // Local imports
 var {authenticate} = require('./middleware/authenticate');
@@ -18,6 +20,10 @@ var {GetEvents} = require('./utils/users-events');
 var port = process.env.PORT || 3000;
 var app = express();
 app.use(parser.json());
+app.use(cors({origin: null}));
+
+//cors
+app.options('*', cors())
 
 // User
 // POST /users
