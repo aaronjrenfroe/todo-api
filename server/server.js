@@ -20,7 +20,7 @@ var {GetEvents} = require('./utils/users-events');
 var port = process.env.PORT || 3000;
 var app = express();
 app.use(parser.json());
-app.use(cors({origin: null}));
+app.use(cors({origin: 'http://localhost:4200'}));
 
 //cors
 app.options('*', cors())
