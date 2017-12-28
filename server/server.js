@@ -15,7 +15,7 @@ var {GetEvents} = require('./utils/users-events');
 
 
 // Globals 
-var port = 3000;
+var port = prcess.env.PORT || 3000;
 var app = express();
 app.use(parser.json());
 
@@ -116,5 +116,5 @@ app.patch('/api/post/:id', authenticate, (req, res) => {
 
 
 app.listen(port, () => {
-    console.log('Serving on port: ' + port);
+    console.log(`Serving on port:   ${port}`);
 });
