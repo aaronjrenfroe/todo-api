@@ -6,120 +6,114 @@ const parser = require('body-parser');
 const {ObjectID} = require('mongodb');
 
 // Local imports
+var {authenticate} = require('./middleware/authenticate');
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
+var {Post} = require('./models/post');
+var {GetEvents} = require('./utils/users-events');
+
 
 // Globals 
 var port = 3000;
 var app = express();
 app.use(parser.json());
 
-// get by id
-app.get('/api/todo/:id', (req, res) => {
-    var id = req.params['id'];
-    if(!ObjectID.isValid(id)){
-        res.status(404).send("Invalid ID");
-        
-    }else{
-        Todo.findById(id).then((doc) => {
-            if(doc){
-                res.send(docs);
-            }else{
-                res.status(400).send();
-            }
-        }, (err) => {
-            res.status(400).send(err);
-        });
-    }
-});
-
-// get all
-app.get('/api/todo', (req, res) => {
-    Todo.find().then((docs) => {
-        res.send(docs);
-    }, (err) => {
-        res.status(400).send(err);
-    });
-});
-
-// create
-app.post('/api/todo', (req, res) => {
-    var body = req.body;
-    var todo = new Todo(body);
-    todo.save().then((doc) => {
-        res.send({
-            status: 'good',
-            created : doc
-        });
-    }, (err) => {
-        res.status(400).send({
-                status: 'bad',
-                result : err 
-        });
-    }
-    );  
-});
-
-// delete
-app.delete('/api/todo/:id', (req, res) => {
-    
-    var id = req.params['id'];
-    Todo.findByIdAndRemove(id)
-        .then((doc) => {
-            // returning the removed doc
-            res.send(doc);
-        }, (err) => {
-            res.status(400).send(err);
-        });
-});
-
-// update
-app.patch('/api/todo/:id', (req, res) => {
-
-    var id = req.params['id'];
-    var body =  _.pick(req.body, ['completed', 'task']); // Picking out wanted properties
-    
-    if(!ObjectID.isValid(id)){
-        res.status(404).send("Invalid ID");
-    }else{
-        var id = req.params['id'];
-        if(_.isBoolean(body.completed) && body.completed){
-            body.completedAt = Date.now();
-        }else{
-            body.completedAt = null;
-            body.completed = false;
-        }
-
-        Todo.findByIdAndUpdate(id,{$set: body}, {new: true}).then((doc) => {
-            if(!doc){
-                res.status(400).send();
-            }else{
-                res.send(doc);
-            }
-        }, (err) => {
-            res.status(400).send(err);
-        });
-    }
-});
-
-
 // User
-// create
+// POST /users
 app.post('/api/user', (req, res) => {
     var body = _.pick(req.body, ['email', 'password']);
-
     var user = new User(body);
-
+  
     user.save().then(() => {
-        return user.generateAuthToken();
-        //res.send({status: 'good', created : doc });
+      return user.generateAuthToken();
     }).then((token) => {
-        res.header('x-auth', token).send({status: 'good', user : doc, token });
+      res.header('x-auth', token).send(user);
+    }).catch((e) => {
+      res.status(400).send(e);
+    })
+  });
+  
+  
+  app.get('/api/user/me', authenticate, (req, res) => {
+     res.send(req.user);
+  });
+  
+  app.post('/api/user/login', (req, res) => {
+      var body = _.pick(req.body, ['email', 'password']);
+  
+      User.findByCredentials(body.email, body.password).then((user) => {
+          // Good
+          user.generateAuthToken().then((token) => {
+              res.header('x-auth', token).send(user);
+          });
+      }).catch((err) => {
+          // user not found with creds
+          res.status(400).send(err); 
+      });
+      
+  });
+  
+  
+  app.delete('/api/user/me/token',authenticate, (req, res) => {
+  
+      var body = _.pick(req.body, ['email', 'password']);
+      req.user.removeToken(req.token).then(() => {
+          //resolve
+          res.status(200).send();
+      }, () => {
+          // reject
+          res.status(400).send();
+      });
+      
+  
+  });
+
+// get post for user 
+// would be called by mobile APP
+app.post('/api/posts',(req, res) => {
+    var id = req.body['1'];
+    var apiToken = req.body['ApiToken'];
+    var codeWord = req.body['Jesus'];
+    console.log(id, apiToken, codeWord);
+    
+    // Make CT REquest
+    // Get Array of Event ID's
+    //Post.findByEventArray([]);
+    GetEvents(id, apiToken).then((response) => {
+        res.send(response.data);
     }).catch((err) => {
-        res.status(400).send({ status: 'bad', result : err });
-    });
+        res.status(401).send();
+    })
+    
 });
+
+// All Other Endpoints will be called by post creation website
+
+// get all post
+app.get('/api/post', authenticate,(req, res) => {
+    var body = req.body;
+    res.send("get post");
+});
+
+// create Post
+app.post('/api/post', authenticate,(req, res) => {
+    var body = req.body;
+    res.send("creat post");
+});
+
+// delete Post
+app.delete('/api/post/:id', authenticate,(req, res) => {
+    var id = req.params['id'];
+    res.send("delete post");
+});
+
+// update post
+app.patch('/api/post/:id', authenticate, (req, res) => {
+    var id = req.params['id'];
+    res.send("update post");
+});
+
 
 app.listen(port, () => {
     console.log('Serving on port: ' + port);
