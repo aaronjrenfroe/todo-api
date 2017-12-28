@@ -19,8 +19,8 @@ var {GetEvents} = require('./utils/users-events');
 // Globals 
 var port = process.env.PORT || 3000;
 var app = express();
-app.use(parser.json());
-app.use(cors({origin: 'http://localhost:4200'}));
+app.use(parser.json()); 
+app.use(cors({origin: 'http://localhost:4200', exposedHeaders: 'x-auth'}));
 
 //cors
 app.options('*', cors())
@@ -28,6 +28,7 @@ app.options('*', cors())
 // User
 // POST /users
 app.post('/api/user', (req, res) => {
+    console.log(req)
     var body = _.pick(req.body, ['email', 'password']);
     var user = new User(body);
   
@@ -39,8 +40,7 @@ app.post('/api/user', (req, res) => {
       res.status(400).send(e);
     })
   });
-  
-  
+
   app.get('/api/user/me', authenticate, (req, res) => {
      res.send(req.user);
   });
