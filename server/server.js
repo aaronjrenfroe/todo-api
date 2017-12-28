@@ -15,7 +15,7 @@ var {GetEvents} = require('./utils/users-events');
 
 
 // Globals 
-var port = prcess.env.PORT || 3000;
+var port = process.env.PORT || 3000;
 var app = express();
 app.use(parser.json());
 
