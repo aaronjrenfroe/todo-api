@@ -22,6 +22,10 @@ var UserSchema = new mongoose.Schema({
     require: true,
     minlength: 6
   },
+  privleges: {
+    type: String,
+    require: true,
+  },
   tokens: [{
     access: {
       type: String,
@@ -37,8 +41,7 @@ var UserSchema = new mongoose.Schema({
 UserSchema.methods.toJSON = function () {
   var user = this;
   var userObject = user.toObject();
-
-  return _.pick(userObject, ['_id', 'email']);
+  return _.pick(userObject, ['_id', 'email', 'privleges']);
 };
 
 UserSchema.methods.generateAuthToken = function () {
@@ -84,13 +87,15 @@ UserSchema.statics.findByToken = function (token) {
 
   try {
     decoded = jwt.verify(token, 'abc123');
+    console.log(decoded);
+
   }catch (err){
     return Promise.reject();
   }
   return User.findOne({
     '_id': decoded._id,
     'tokens.token' : token,
-    'tokens.access' : 'auth'
+    'tokens.access' : decoded.access
   })
 
 }
@@ -114,18 +119,18 @@ UserSchema.statics.findByCredentials = function (email, password) {
 
   });
   
-  var decoded;
+  // var decoded;
 
-  try {
-    decoded = jwt.verify(token, 'abc123');
-  }catch (err){
-    return Promise.reject();
-  }
-  return User.findOne({
-    '_id': decoded._id,
-    'tokens.token' : token,
-    'tokens.access' : 'auth'
-  })
+  // try {
+  //   decoded = jwt.verify(token, 'abc123');
+  // }catch (err){
+  //   return Promise.reject();
+  // }
+  // return User.findOne({
+  //   '_id': decoded._id,
+  //   'tokens.token' : token,
+  //   'tokens.access' : decoded.access
+  // })
 
 }
 

@@ -26,10 +26,14 @@ app.use(cors({origin: 'http://localhost:4200', exposedHeaders: 'x-auth'}));
 app.options('*', cors())
 
 // User
-// POST /users
+// POST /users / create
 app.post('/api/user', (req, res) => {
-    console.log(req)
-    var body = _.pick(req.body, ['email', 'password']);
+    
+    var body = _.pick(req.body, ['email', 'password', 'privleges']);
+    if(!body.privleges){
+        body.privleges = 'user';
+    }
+
     var user = new User(body);
   
     user.save().then(() => {
@@ -44,10 +48,22 @@ app.post('/api/user', (req, res) => {
   app.get('/api/user/me', authenticate, (req, res) => {
      res.send(req.user);
   });
+
+  app.get('/api/user', authenticate ,(req, res) => {
+    let user = req.user;
+
+    if(user.privleges === 'admin'){
+        User.find().then((users) => {
+            res.send(users);
+        });
+    }else{
+        res.status(400).send();
+    }
+  });
   
   app.post('/api/user/login', (req, res) => {
       var body = _.pick(req.body, ['email', 'password']);
-  
+
       User.findByCredentials(body.email, body.password).then((user) => {
           // Good
           user.generateAuthToken().then((token) => {
@@ -61,8 +77,8 @@ app.post('/api/user', (req, res) => {
   });
   
   
-  app.delete('/api/user/me/token',authenticate, (req, res) => {
-  
+  app.delete('/api/user/me',authenticate, (req, res) => {
+
       var body = _.pick(req.body, ['email', 'password']);
       req.user.removeToken(req.token).then(() => {
           //resolve
@@ -72,7 +88,6 @@ app.post('/api/user', (req, res) => {
           res.status(400).send();
       });
       
-  
   });
 
 // get post for user 
